@@ -38,11 +38,34 @@
         <Reference Include="System.Xml" />
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="BaseChannel.cs" />
+        <Compile Include="ConnectionRequest.cs" />
+        <Compile Include="INetEventListener.cs" />
+        <Compile Include="Layers\Crc32cLayer.cs" />
+        <Compile Include="Layers\PacketLayerBase.cs" />
+        <Compile Include="Layers\XorEncryptLayer.cs" />
+        <Compile Include="NatPunchModule.cs" />
+        <Compile Include="NetConstants.cs" />
+        <Compile Include="NetDebug.cs" />
+        <Compile Include="NetManager.cs" />
+        <Compile Include="NetPacket.cs" />
+        <Compile Include="NetPacketPool.cs" />
+        <Compile Include="NetPeer.cs" />
+        <Compile Include="NetSocket.cs" />
+        <Compile Include="NetStatistics.cs" />
         <Compile Include="NetUtils.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
-    </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Utils" />
+        <Compile Include="ReliableChannel.cs" />
+        <Compile Include="SequencedChannel.cs" />
+        <Compile Include="Utils\CRC32C.cs" />
+        <Compile Include="Utils\FastBitConverter.cs" />
+        <Compile Include="Utils\INetSerializable.cs" />
+        <Compile Include="Utils\NetDataReader.cs" />
+        <Compile Include="Utils\NetDataWriter.cs" />
+        <Compile Include="Utils\NetPacketProcessor.cs" />
+        <Compile Include="Utils\NetSerializer.cs" />
+        <Compile Include="Utils\NtpPacket.cs" />
+        <Compile Include="Utils\NtpRequest.cs" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
