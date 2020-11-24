@@ -77,8 +77,8 @@ namespace LibChaiiLatte {
                 _remoteSequence = packet.Sequence;
                 Peer.NetManager.CreateReceiveEvent(packet,
                                                    _reliable
-                                                       ? DeliveryMethod.ReliableSequenced
-                                                       : DeliveryMethod.Sequenced, NetConstants.ChanneledHeaderSize,
+                                                       ? SendType.ReliableSequenced
+                                                       : SendType.Sequenced, NetConstants.ChanneledHeaderSize,
                                                    Peer);
                 packetProcessed = true;
             }

@@ -71,7 +71,7 @@ namespace LibChaiiLatte {
         public SocketError ErrorCode;
         public DisconnectReason DisconnectReason;
         public ConnectionRequest ConnectionRequest;
-        public DeliveryMethod DeliveryMethod;
+        public SendType SendType;
         public readonly NetPacketReader DataReader;
 
         public NetEvent(NetManager manager) {
@@ -488,7 +488,7 @@ namespace LibChaiiLatte {
                                  int latency = 0,
                                  DisconnectReason disconnectReason = DisconnectReason.ConnectionFailed,
                                  ConnectionRequest connectionRequest = null,
-                                 DeliveryMethod deliveryMethod = DeliveryMethod.Unreliable,
+                                 SendType sendType = SendType.Unreliable,
                                  NetPacket readerSource = null,
                                  object userData = null) {
             NetEvent evt;
@@ -515,7 +515,7 @@ namespace LibChaiiLatte {
             evt.ErrorCode = errorCode;
             evt.DisconnectReason = disconnectReason;
             evt.ConnectionRequest = connectionRequest;
-            evt.DeliveryMethod = deliveryMethod;
+            evt.SendType = sendType;
             evt.UserData = userData;
 
             if (unsyncEvent) {
@@ -541,7 +541,7 @@ namespace LibChaiiLatte {
                     _netEventListener.OnPeerDisconnected(evt.Peer, info);
                     break;
                 case NetEvent.EType.Receive:
-                    _netEventListener.OnNetworkReceive(evt.Peer, evt.DataReader, evt.DeliveryMethod);
+                    _netEventListener.OnNetworkReceive(evt.Peer, evt.DataReader, evt.SendType);
                     break;
                 case NetEvent.EType.ReceiveUnconnected:
                     _netEventListener.OnNetworkReceiveUnconnected(evt.RemoteEndPoint, evt.DataReader,
@@ -920,7 +920,7 @@ namespace LibChaiiLatte {
             }
         }
 
-        internal void CreateReceiveEvent(NetPacket packet, DeliveryMethod method, int headerSize, NetPeer fromPeer) {
+        internal void CreateReceiveEvent(NetPacket packet, SendType method, int headerSize, NetPeer fromPeer) {
             NetEvent evt;
             do {
                 evt = _netEventPoolHead;
@@ -933,7 +933,7 @@ namespace LibChaiiLatte {
             evt.Type = NetEvent.EType.Receive;
             evt.DataReader.SetSource(packet, headerSize);
             evt.Peer = fromPeer;
-            evt.DeliveryMethod = method;
+            evt.SendType = method;
             if (UnsyncedEvents || UnsyncedReceiveEvent) {
                 ProcessEvent(evt);
             }
@@ -948,7 +948,7 @@ namespace LibChaiiLatte {
         /// </summary>
         /// <param name="writer">DataWriter with data</param>
         /// <param name="options">Send options (reliable, unreliable, etc.)</param>
-        public void SendToAll(NetDataWriter writer, DeliveryMethod options) {
+        public void SendToAll(NetDataWriter writer, SendType options) {
             SendToAll(writer.Data, 0, writer.Length, options);
         }
 
@@ -957,7 +957,7 @@ namespace LibChaiiLatte {
         /// </summary>
         /// <param name="data">Data</param>
         /// <param name="options">Send options (reliable, unreliable, etc.)</param>
-        public void SendToAll(byte[] data, DeliveryMethod options) {
+        public void SendToAll(byte[] data, SendType options) {
             SendToAll(data, 0, data.Length, options);
         }
 
@@ -968,7 +968,7 @@ namespace LibChaiiLatte {
         /// <param name="start">Start of data</param>
         /// <param name="length">Length of data</param>
         /// <param name="options">Send options (reliable, unreliable, etc.)</param>
-        public void SendToAll(byte[] data, int start, int length, DeliveryMethod options) {
+        public void SendToAll(byte[] data, int start, int length, SendType options) {
             SendToAll(data, start, length, 0, options);
         }
 
@@ -978,7 +978,7 @@ namespace LibChaiiLatte {
         /// <param name="writer">DataWriter with data</param>
         /// <param name="channelNumber">Number of channel (from 0 to channelsCount - 1)</param>
         /// <param name="options">Send options (reliable, unreliable, etc.)</param>
-        public void SendToAll(NetDataWriter writer, byte channelNumber, DeliveryMethod options) {
+        public void SendToAll(NetDataWriter writer, byte channelNumber, SendType options) {
             SendToAll(writer.Data, 0, writer.Length, channelNumber, options);
         }
 
@@ -988,7 +988,7 @@ namespace LibChaiiLatte {
         /// <param name="data">Data</param>
         /// <param name="channelNumber">Number of channel (from 0 to channelsCount - 1)</param>
         /// <param name="options">Send options (reliable, unreliable, etc.)</param>
-        public void SendToAll(byte[] data, byte channelNumber, DeliveryMethod options) {
+        public void SendToAll(byte[] data, byte channelNumber, SendType options) {
             SendToAll(data, 0, data.Length, channelNumber, options);
         }
 
@@ -1000,7 +1000,7 @@ namespace LibChaiiLatte {
         /// <param name="length">Length of data</param>
         /// <param name="channelNumber">Number of channel (from 0 to channelsCount - 1)</param>
         /// <param name="options">Send options (reliable, unreliable, etc.)</param>
-        public void SendToAll(byte[] data, int start, int length, byte channelNumber, DeliveryMethod options) {
+        public void SendToAll(byte[] data, int start, int length, byte channelNumber, SendType options) {
             try {
                 _peersLock.EnterReadLock();
                 for (var netPeer = _headPeer; netPeer != null; netPeer = netPeer.NextPeer)
@@ -1017,7 +1017,7 @@ namespace LibChaiiLatte {
         /// <param name="writer">DataWriter with data</param>
         /// <param name="options">Send options (reliable, unreliable, etc.)</param>
         /// <param name="excludePeer">Excluded peer</param>
-        public void SendToAll(NetDataWriter writer, DeliveryMethod options, NetPeer excludePeer) {
+        public void SendToAll(NetDataWriter writer, SendType options, NetPeer excludePeer) {
             SendToAll(writer.Data, 0, writer.Length, 0, options, excludePeer);
         }
 
@@ -1027,7 +1027,7 @@ namespace LibChaiiLatte {
         /// <param name="data">Data</param>
         /// <param name="options">Send options (reliable, unreliable, etc.)</param>
         /// <param name="excludePeer">Excluded peer</param>
-        public void SendToAll(byte[] data, DeliveryMethod options, NetPeer excludePeer) {
+        public void SendToAll(byte[] data, SendType options, NetPeer excludePeer) {
             SendToAll(data, 0, data.Length, 0, options, excludePeer);
         }
 
@@ -1039,7 +1039,7 @@ namespace LibChaiiLatte {
         /// <param name="length">Length of data</param>
         /// <param name="options">Send options (reliable, unreliable, etc.)</param>
         /// <param name="excludePeer">Excluded peer</param>
-        public void SendToAll(byte[] data, int start, int length, DeliveryMethod options, NetPeer excludePeer) {
+        public void SendToAll(byte[] data, int start, int length, SendType options, NetPeer excludePeer) {
             SendToAll(data, start, length, 0, options, excludePeer);
         }
 
@@ -1050,7 +1050,7 @@ namespace LibChaiiLatte {
         /// <param name="channelNumber">Number of channel (from 0 to channelsCount - 1)</param>
         /// <param name="options">Send options (reliable, unreliable, etc.)</param>
         /// <param name="excludePeer">Excluded peer</param>
-        public void SendToAll(NetDataWriter writer, byte channelNumber, DeliveryMethod options, NetPeer excludePeer) {
+        public void SendToAll(NetDataWriter writer, byte channelNumber, SendType options, NetPeer excludePeer) {
             SendToAll(writer.Data, 0, writer.Length, channelNumber, options, excludePeer);
         }
 
@@ -1061,7 +1061,7 @@ namespace LibChaiiLatte {
         /// <param name="channelNumber">Number of channel (from 0 to channelsCount - 1)</param>
         /// <param name="options">Send options (reliable, unreliable, etc.)</param>
         /// <param name="excludePeer">Excluded peer</param>
-        public void SendToAll(byte[] data, byte channelNumber, DeliveryMethod options, NetPeer excludePeer) {
+        public void SendToAll(byte[] data, byte channelNumber, SendType options, NetPeer excludePeer) {
             SendToAll(data, 0, data.Length, channelNumber, options, excludePeer);
         }
 
@@ -1079,7 +1079,7 @@ namespace LibChaiiLatte {
                               int start,
                               int length,
                               byte channelNumber,
-                              DeliveryMethod options,
+                              SendType options,
                               NetPeer excludePeer) {
             try {
                 _peersLock.EnterReadLock();

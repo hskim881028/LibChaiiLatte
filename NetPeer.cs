@@ -131,16 +131,12 @@ namespace LibChaiiLatte {
         /// <summary>
         /// Current connection state
         /// </summary>
-        public ConnectionState ConnectionState {
-            get { return _connectionState; }
-        }
+        public ConnectionState ConnectionState => _connectionState;
 
         /// <summary>
         /// Connection time for internal purposes
         /// </summary>
-        internal long ConnectTime {
-            get { return _connectTime; }
-        }
+        internal long ConnectTime => _connectTime;
 
         /// <summary>
         /// Peer id can be used as key in your dictionary of peers
@@ -171,13 +167,9 @@ namespace LibChaiiLatte {
         /// <summary>
         /// Time since last packet received (including internal library packets)
         /// </summary>
-        public int TimeSinceLastPacket {
-            get { return _timeSinceLastPacket; }
-        }
+        public int TimeSinceLastPacket => _timeSinceLastPacket;
 
-        internal double ResendDelay {
-            get { return _resendDelay; }
-        }
+        internal double ResendDelay => _resendDelay;
 
         /// <summary>
         /// Application defined object containing data about the connection
@@ -223,7 +215,7 @@ namespace LibChaiiLatte {
         /// <returns>packets count in channel queue</returns>
         public int GetPacketsCountInReliableQueue(byte channelNumber, bool ordered) {
             int idx = channelNumber * 4 +
-                      (byte) (ordered ? DeliveryMethod.ReliableOrdered : DeliveryMethod.ReliableUnordered);
+                      (byte) (ordered ? SendType.ReliableOrdered : SendType.ReliableUnordered);
             var channel = _channels[idx];
             return ((ReliableChannel) channel)?.PacketsInQueue ?? 0;
         }
@@ -232,17 +224,17 @@ namespace LibChaiiLatte {
             BaseChannel newChannel = _channels[idx];
             if (newChannel != null)
                 return newChannel;
-            switch ((DeliveryMethod) (idx % 4)) {
-                case DeliveryMethod.ReliableUnordered:
+            switch ((SendType) (idx % 4)) {
+                case SendType.ReliableUnordered:
                     newChannel = new ReliableChannel(this, false, idx);
                     break;
-                case DeliveryMethod.Sequenced:
+                case SendType.Sequenced:
                     newChannel = new SequencedChannel(this, false, idx);
                     break;
-                case DeliveryMethod.ReliableOrdered:
+                case SendType.ReliableOrdered:
                     newChannel = new ReliableChannel(this, true, idx);
                     break;
-                case DeliveryMethod.ReliableSequenced:
+                case SendType.ReliableSequenced:
                     newChannel = new SequencedChannel(this, true, idx);
                     break;
             }
@@ -326,8 +318,8 @@ namespace LibChaiiLatte {
         /// </summary>
         /// <param name="options">Type of packet that you want send</param>
         /// <returns>size in bytes</returns>
-        public int GetMaxSinglePacketSize(DeliveryMethod options) {
-            return _mtu - NetPacket.GetHeaderSize(options == DeliveryMethod.Unreliable
+        public int GetMaxSinglePacketSize(SendType options) {
+            return _mtu - NetPacket.GetHeaderSize(options == SendType.Unreliable
                                                       ? PacketProperty.Unreliable
                                                       : PacketProperty.Channeled);
         }
@@ -337,18 +329,18 @@ namespace LibChaiiLatte {
         /// </summary>
         /// <param name="data">Data</param>
         /// <param name="channelNumber">Number of channel (from 0 to channelsCount - 1)</param>
-        /// <param name="deliveryMethod">Delivery method (reliable, unreliable, etc.)</param>
+        /// <param name="sendType">Send options (reliable, unreliable, etc.)</param>
         /// <param name="userData">User data that will be received in DeliveryEvent</param>
         /// <exception cref="ArgumentException">
         ///     If you trying to send unreliable packet type<para/>
         /// </exception>
         public void SendWithDeliveryEvent(byte[] data,
                                           byte channelNumber,
-                                          DeliveryMethod deliveryMethod,
+                                          SendType sendType,
                                           object userData) {
-            if (deliveryMethod != DeliveryMethod.ReliableOrdered && deliveryMethod != DeliveryMethod.ReliableUnordered)
+            if (sendType != SendType.ReliableOrdered && sendType != SendType.ReliableUnordered)
                 throw new ArgumentException("Delivery event will work only for ReliableOrdered/Unordered packets");
-            SendInternal(data, 0, data.Length, channelNumber, deliveryMethod, userData);
+            SendInternal(data, 0, data.Length, channelNumber, sendType, userData);
         }
 
         /// <summary>
@@ -358,7 +350,7 @@ namespace LibChaiiLatte {
         /// <param name="start">Start of data</param>
         /// <param name="length">Length of data</param>
         /// <param name="channelNumber">Number of channel (from 0 to channelsCount - 1)</param>
-        /// <param name="deliveryMethod">Delivery method (reliable, unreliable, etc.)</param>
+        /// <param name="sendType">Send options (reliable, unreliable, etc.)</param>
         /// <param name="userData">User data that will be received in DeliveryEvent</param>
         /// <exception cref="ArgumentException">
         ///     If you trying to send unreliable packet type<para/>
@@ -367,11 +359,11 @@ namespace LibChaiiLatte {
                                           int start,
                                           int length,
                                           byte channelNumber,
-                                          DeliveryMethod deliveryMethod,
+                                          SendType sendType,
                                           object userData) {
-            if (deliveryMethod != DeliveryMethod.ReliableOrdered && deliveryMethod != DeliveryMethod.ReliableUnordered)
+            if (sendType != SendType.ReliableOrdered && sendType != SendType.ReliableUnordered)
                 throw new ArgumentException("Delivery event will work only for ReliableOrdered/Unordered packets");
-            SendInternal(data, start, length, channelNumber, deliveryMethod, userData);
+            SendInternal(data, start, length, channelNumber, sendType, userData);
         }
 
         /// <summary>
@@ -379,46 +371,46 @@ namespace LibChaiiLatte {
         /// </summary>
         /// <param name="dataWriter">Data</param>
         /// <param name="channelNumber">Number of channel (from 0 to channelsCount - 1)</param>
-        /// <param name="deliveryMethod">Delivery method (reliable, unreliable, etc.)</param>
+        /// <param name="sendType">Send options (reliable, unreliable, etc.)</param>
         /// <param name="userData">User data that will be received in DeliveryEvent</param>
         /// <exception cref="ArgumentException">
         ///     If you trying to send unreliable packet type<para/>
         /// </exception>
         public void SendWithDeliveryEvent(NetDataWriter dataWriter,
                                           byte channelNumber,
-                                          DeliveryMethod deliveryMethod,
+                                          SendType sendType,
                                           object userData) {
-            if (deliveryMethod != DeliveryMethod.ReliableOrdered && deliveryMethod != DeliveryMethod.ReliableUnordered)
+            if (sendType != SendType.ReliableOrdered && sendType != SendType.ReliableUnordered)
                 throw new ArgumentException("Delivery event will work only for ReliableOrdered/Unordered packets");
-            SendInternal(dataWriter.Data, 0, dataWriter.Length, channelNumber, deliveryMethod, userData);
+            SendInternal(dataWriter.Data, 0, dataWriter.Length, channelNumber, sendType, userData);
         }
 
         /// <summary>
         /// Send data to peer (channel - 0)
         /// </summary>
         /// <param name="data">Data</param>
-        /// <param name="deliveryMethod">Send options (reliable, unreliable, etc.)</param>
+        /// <param name="sendType">Send options (reliable, unreliable, etc.)</param>
         /// <exception cref="TooBigPacketException">
         ///     If size exceeds maximum limit:<para/>
         ///     MTU - headerSize bytes for Unreliable<para/>
         ///     Fragment count exceeded ushort.MaxValue<para/>
         /// </exception>
-        public void Send(byte[] data, DeliveryMethod deliveryMethod) {
-            SendInternal(data, 0, data.Length, 0, deliveryMethod, null);
+        public void Send(byte[] data, SendType sendType) {
+            SendInternal(data, 0, data.Length, 0, sendType, null);
         }
 
         /// <summary>
         /// Send data to peer (channel - 0)
         /// </summary>
         /// <param name="dataWriter">DataWriter with data</param>
-        /// <param name="deliveryMethod">Send options (reliable, unreliable, etc.)</param>
+        /// <param name="sendType">Send options (reliable, unreliable, etc.)</param>
         /// <exception cref="TooBigPacketException">
         ///     If size exceeds maximum limit:<para/>
         ///     MTU - headerSize bytes for Unreliable<para/>
         ///     Fragment count exceeded ushort.MaxValue<para/>
         /// </exception>
-        public void Send(NetDataWriter dataWriter, DeliveryMethod deliveryMethod) {
-            SendInternal(dataWriter.Data, 0, dataWriter.Length, 0, deliveryMethod, null);
+        public void Send(NetDataWriter dataWriter, SendType sendType) {
+            SendInternal(dataWriter.Data, 0, dataWriter.Length, 0, sendType, null);
         }
 
         /// <summary>
@@ -433,7 +425,7 @@ namespace LibChaiiLatte {
         ///     MTU - headerSize bytes for Unreliable<para/>
         ///     Fragment count exceeded ushort.MaxValue<para/>
         /// </exception>
-        public void Send(byte[] data, int start, int length, DeliveryMethod options) {
+        public void Send(byte[] data, int start, int length, SendType options) {
             SendInternal(data, start, length, 0, options, null);
         }
 
@@ -442,14 +434,14 @@ namespace LibChaiiLatte {
         /// </summary>
         /// <param name="data">Data</param>
         /// <param name="channelNumber">Number of channel (from 0 to channelsCount - 1)</param>
-        /// <param name="deliveryMethod">Send options (reliable, unreliable, etc.)</param>
+        /// <param name="sendType">Send options (reliable, unreliable, etc.)</param>
         /// <exception cref="TooBigPacketException">
         ///     If size exceeds maximum limit:<para/>
         ///     MTU - headerSize bytes for Unreliable<para/>
         ///     Fragment count exceeded ushort.MaxValue<para/>
         /// </exception>
-        public void Send(byte[] data, byte channelNumber, DeliveryMethod deliveryMethod) {
-            SendInternal(data, 0, data.Length, channelNumber, deliveryMethod, null);
+        public void Send(byte[] data, byte channelNumber, SendType sendType) {
+            SendInternal(data, 0, data.Length, channelNumber, sendType, null);
         }
 
         /// <summary>
@@ -457,14 +449,14 @@ namespace LibChaiiLatte {
         /// </summary>
         /// <param name="dataWriter">DataWriter with data</param>
         /// <param name="channelNumber">Number of channel (from 0 to channelsCount - 1)</param>
-        /// <param name="deliveryMethod">Send options (reliable, unreliable, etc.)</param>
+        /// <param name="sendType">Send options (reliable, unreliable, etc.)</param>
         /// <exception cref="TooBigPacketException">
         ///     If size exceeds maximum limit:<para/>
         ///     MTU - headerSize bytes for Unreliable<para/>
         ///     Fragment count exceeded ushort.MaxValue<para/>
         /// </exception>
-        public void Send(NetDataWriter dataWriter, byte channelNumber, DeliveryMethod deliveryMethod) {
-            SendInternal(dataWriter.Data, 0, dataWriter.Length, channelNumber, deliveryMethod, null);
+        public void Send(NetDataWriter dataWriter, byte channelNumber, SendType sendType) {
+            SendInternal(dataWriter.Data, 0, dataWriter.Length, channelNumber, sendType, null);
         }
 
         /// <summary>
@@ -474,21 +466,21 @@ namespace LibChaiiLatte {
         /// <param name="start">Start of data</param>
         /// <param name="length">Length of data</param>
         /// <param name="channelNumber">Number of channel (from 0 to channelsCount - 1)</param>
-        /// <param name="deliveryMethod">Delivery method (reliable, unreliable, etc.)</param>
+        /// <param name="sendType">Send options (reliable, unreliable, etc.)</param>
         /// <exception cref="TooBigPacketException">
         ///     If size exceeds maximum limit:<para/>
         ///     MTU - headerSize bytes for Unreliable<para/>
         ///     Fragment count exceeded ushort.MaxValue<para/>
         /// </exception>
-        public void Send(byte[] data, int start, int length, byte channelNumber, DeliveryMethod deliveryMethod) {
-            SendInternal(data, start, length, channelNumber, deliveryMethod, null);
+        public void Send(byte[] data, int start, int length, byte channelNumber, SendType sendType) {
+            SendInternal(data, start, length, channelNumber, sendType, null);
         }
 
         private void SendInternal(byte[] data,
                                   int start,
                                   int length,
                                   byte channelNumber,
-                                  DeliveryMethod deliveryMethod,
+                                  SendType sendType,
                                   object userData) {
             if (_connectionState != ConnectionState.Connected || channelNumber >= _channels.Length)
                 return;
@@ -497,12 +489,12 @@ namespace LibChaiiLatte {
             PacketProperty property;
             BaseChannel channel = null;
 
-            if (deliveryMethod == DeliveryMethod.Unreliable) {
+            if (sendType == SendType.Unreliable) {
                 property = PacketProperty.Unreliable;
             }
             else {
                 property = PacketProperty.Channeled;
-                channel = CreateChannel((byte) (channelNumber * 4 + (byte) deliveryMethod));
+                channel = CreateChannel((byte) (channelNumber * 4 + (byte) sendType));
             }
 
             //Prepare  
@@ -514,8 +506,8 @@ namespace LibChaiiLatte {
             int mtu = _mtu;
             if (length + headerSize > mtu) {
                 //if cannot be fragmented
-                if (deliveryMethod != DeliveryMethod.ReliableOrdered &&
-                    deliveryMethod != DeliveryMethod.ReliableUnordered)
+                if (sendType != SendType.ReliableOrdered &&
+                    sendType != SendType.ReliableUnordered)
                     throw new TooBigPacketException("Unreliable packet size exceeded maximum of " + (mtu - headerSize) +
                                                     " bytes");
 
@@ -645,7 +637,7 @@ namespace LibChaiiLatte {
             _resendDelay = 25.0 + _avgRtt * 2.1; // 25 ms + double rtt
         }
 
-        internal void AddReliablePacket(DeliveryMethod method, NetPacket p) {
+        internal void AddReliablePacket(SendType method, NetPacket p) {
             if (p.IsFragmented) {
                 NetDebug.Write("Fragment. Id: {0}, Part: {1}, Total: {2}", p.FragmentId, p.FragmentPart,
                                p.FragmentsTotal);
@@ -915,7 +907,7 @@ namespace LibChaiiLatte {
 
                 //Simple packet without acks
                 case PacketProperty.Unreliable:
-                    NetManager.CreateReceiveEvent(packet, DeliveryMethod.Unreliable, NetConstants.HeaderSize, this);
+                    NetManager.CreateReceiveEvent(packet, SendType.Unreliable, NetConstants.HeaderSize, this);
                     return;
 
                 case PacketProperty.MtuCheck:

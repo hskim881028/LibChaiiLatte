@@ -56,7 +56,7 @@ namespace LibChaiiLatte {
 
         private bool _mustSendAcks;
 
-        private readonly DeliveryMethod _deliveryMethod;
+        private readonly SendType _sendType;
         private readonly bool _ordered;
         private readonly int _windowSize;
         private const int BitsInByte = 8;
@@ -71,11 +71,11 @@ namespace LibChaiiLatte {
                 _pendingPackets[i] = new PendingPacket();
 
             if (_ordered) {
-                _deliveryMethod = DeliveryMethod.ReliableOrdered;
+                _sendType = SendType.ReliableOrdered;
                 _receivedPackets = new NetPacket[_windowSize];
             }
             else {
-                _deliveryMethod = DeliveryMethod.ReliableUnordered;
+                _sendType = SendType.ReliableUnordered;
                 _earlyReceived = new bool[_windowSize];
             }
 
@@ -248,7 +248,7 @@ namespace LibChaiiLatte {
             //detailed check
             if (seq == _remoteSequence) {
                 NetDebug.Write("[RR]ReliableInOrder packet succes");
-                Peer.AddReliablePacket(_deliveryMethod, packet);
+                Peer.AddReliablePacket(_sendType, packet);
                 _remoteSequence = (_remoteSequence + 1) % NetConstants.MaxSequence;
 
                 if (_ordered) {
@@ -256,7 +256,7 @@ namespace LibChaiiLatte {
                     while ((p = _receivedPackets[_remoteSequence % _windowSize]) != null) {
                         //process holden packet
                         _receivedPackets[_remoteSequence % _windowSize] = null;
-                        Peer.AddReliablePacket(_deliveryMethod, p);
+                        Peer.AddReliablePacket(_sendType, p);
                         _remoteSequence = (_remoteSequence + 1) % NetConstants.MaxSequence;
                     }
                 }
@@ -277,7 +277,7 @@ namespace LibChaiiLatte {
             }
             else {
                 _earlyReceived[ackIdx] = true;
-                Peer.AddReliablePacket(_deliveryMethod, packet);
+                Peer.AddReliablePacket(_sendType, packet);
             }
 
             return true;

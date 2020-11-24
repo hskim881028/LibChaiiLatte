@@ -73,8 +73,8 @@ namespace LibChaiiLatte {
         /// </summary>
         /// <param name="peer">From peer</param>
         /// <param name="reader">DataReader containing all received data</param>
-        /// <param name="deliveryMethod">Type of received packet</param>
-        void OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod);
+        /// <param name="sendType">Type of received packet</param>
+        void OnNetworkReceive(NetPeer peer, NetPacketReader reader, SendType sendType);
 
         /// <summary>
         /// Received unconnected message
@@ -116,7 +116,7 @@ namespace LibChaiiLatte {
 
         public delegate void OnNetworkError(IPEndPoint endPoint, SocketError socketError);
 
-        public delegate void OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod);
+        public delegate void OnNetworkReceive(NetPeer peer, NetPacketReader reader, SendType sendType);
 
         public delegate void OnNetworkReceiveUnconnected(IPEndPoint remoteEndPoint,
                                                          NetPacketReader reader,
@@ -181,8 +181,8 @@ namespace LibChaiiLatte {
             NetworkErrorEvent?.Invoke(endPoint, socketErrorCode);
         }
 
-        void INetEventListener.OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod) {
-            NetworkReceiveEvent?.Invoke(peer, reader, deliveryMethod);
+        void INetEventListener.OnNetworkReceive(NetPeer peer, NetPacketReader reader, SendType sendType) {
+            NetworkReceiveEvent?.Invoke(peer, reader, sendType);
         }
 
         void INetEventListener.OnNetworkReceiveUnconnected(IPEndPoint remoteEndPoint,
